@@ -1,22 +1,9 @@
 set (RIOT_DAEMON RIoTInterface)
-  
-find_path(RTMESSAGE_API_HEADER REQUIRED NAMES rtMessage.h PATH_SUFFIXES rtmessage)
 
-if (NOT ${RTMESSAGE_API_HEADER} STREQUAL "RTMESSAGE_API_HEADER-NOTFOUND")
-        message("Found rtMessage.h ${RTMESSAGE_API_HEADER}")
-        set(RTMESSAGE_API_HEADERS ${RTMESSAGE_API_HEADER})
-endif()
+add_executable(${RIOT_DAEMON} RIoTInterface.cpp)
+set_source_files_properties(RIoTInterface.cpp PROPERTIES COMPILE_FLAGS "-fpermissive")
 
-find_library(RTMESSAGE_LIBRARY REQUIRED NAMES rtMessage)
-set(RTMESSAGE_LIBRARIES "")
-if (NOT ${RTMESSAGE_LIBRARY} STREQUAL "RTMESSAGE_LIBRARY-NOTFOUND")
-        set(RTMESSAGE_LIBRARIES ${RTMESSAGE_LIBRARY})
-endif()
-
-add_executable(${RIOT_DAEMON} RIoTInterface.c)
 target_include_directories(${RIOT_DAEMON} PRIVATE  ${RTMESSAGE_API_HEADERS})
 target_link_libraries(${RIOT_DAEMON} PRIVATE  ${RTMESSAGE_LIBRARIES} pthread)
-
-set_source_files_properties(RIoTDaemon.cpp PROPERTIES COMPILE_FLAGS "-fpermissive")
 
 install(TARGETS ${RIOT_DAEMON}  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDR})
