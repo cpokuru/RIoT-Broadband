@@ -18,6 +18,11 @@
 # limitations under the License.
 ##########################################################################
 */
+
+/*#######################################################################
+#                       INCLUDES                                        #
+########################################################################*/
+
 #include <cstdlib>
 #include <iostream>
 #include <condition_variable>
@@ -36,6 +41,12 @@
 #define MAX_ITEMS 300
 #define MAX_LENGTH 512
 
+
+/*#######################################################################
+#                       TYPEDEFS                                        #
+########################################################################*/
+
+/* Device Info structure */
 typedef struct {
     char id[MAX_ID_LENGTH];
     char description[MAX_DESC_LENGTH];
@@ -46,11 +57,13 @@ Device devices[MAX_DEVICES];
 
 int numDevices;
 
-int lightIndex = 0; // Index for the "light" category
-int cameraIndex = 0; // Index for the "camera" category
-
 int itemIndex =0;
 using namespace std;
+
+/*#######################################################################
+#                       PROTOTYPES                                      #
+########################################################################*/
+
 void onAvailableDevices(rtMessageHeader const *hdr, uint8_t const *buff, uint32_t n, void *closure);
 void onDeviceProperties(rtMessageHeader const *hdr, uint8_t const *buff, uint32_t n, void *closure);
 void onDeviceProperty(rtMessageHeader const *hdr, uint8_t const *buff, uint32_t n, void *closure);
@@ -71,7 +84,7 @@ int doesDeviceIDExist(Device devices[], int numDevices, char* deviceID) {
     }
     return 0; // Device ID not found in the array
 }
-
+/* Help Function to execute a shell command copy it to the buffer */
 int _syscmd(char *cmd, char *retBuf, int retBufSize)
 {
     FILE *f;
@@ -111,6 +124,8 @@ int _syscmd(char *cmd, char *retBuf, int retBufSize)
    //ckp end
     return 0;
 }
+
+/* Help function to remove trailing spaces */
 void removeTrailingSpaces(char* str) {
     int length = strlen(str);
     int i = length - 1;
@@ -124,6 +139,7 @@ void removeTrailingSpaces(char* str) {
     str[i + 1] = '\0';
 }
 
+/* Function to get the class of the uuid passed as an input */
 void getuuidClasss(char *uid,char *output,int output_size)
 {       
         char cmd[1000]={'\0'};
@@ -155,6 +171,7 @@ void registerForServices()
     rtConnection_AddListener(con, "sendCommand", onSendCommand, con);
 }
 
+/* RIOT interface function */
 int onAvailableDevices1(Device devices[]) {
 
     char buf[MAX_BUF_SIZE];
@@ -182,7 +199,7 @@ int onAvailableDevices1(Device devices[]) {
     return DeviceCount;
 }
 
-
+/* rtmessage callback handler for available devices */
 void onAvailableDevices(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uint32_t rtMsgLength, void *userData)
 {
     rtConnection con = (rtConnection)userData;
@@ -220,18 +237,6 @@ void onAvailableDevices(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, u
 
                 printf("Device Class: %s\n", devices[i].classs);
                 // Set Device Class
-#if 0
-		if(strcmp(devices[i].classs,"camera") == 0)
-		{
-			printf("class is camera \n");
-		        rtMessage_SetString(device, "class","0");
-		}
-		else
-		{
-			printf("class is light \n");
-			rtMessage_SetString(device, "class","1");
-		}
-#endif
      		rtMessage_SetString(device, "class", devices[i].classs);
                 printf("----------------------\n");
 		rtMessage_AddMessage(res, "devices", device);
@@ -240,38 +245,17 @@ void onAvailableDevices(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, u
 
         }
 
-	//ckp end
-//      	rtMessage_Create(&device);
-
-  //      rtMessage_SetString(device, "name", "Philips");
-    //    rtMessage_SetString(device, "uuid", "1234-PHIL-LIGHT-BULB");
-      //  rtMessage_SetString(device, "devType", "1");
-        //rtMessage_AddMessage(res, "devices", device);
-
-        //char *output;
-        //int outLen;
-
-       // rtMessage_Create(&device);
-       // rtMessage_SetString(device, "name", "Hewei-HDCAM-1234");
-       // rtMessage_SetString(device, "devType", "0");
-
-       // rtMessage_AddMessage(res, "devices", device);
-
-        //rtMessage_ToString(res, &output, &outLen);
-        //cout << "[onAvailableDevices]Returning the response " << output << endl;
 
         rtConnection_SendResponse(con, rtHeader, res, 1000);
-        // rtMessage_Release(res);
     }
     else
     {
         cout << "[onAvailableDevices]Received  message not a request. Ignoring.." << endl;
     }
-    // rtMessage_Release(req);
 }
-// Function to remove the device-specific prefix from the key
+
+/* Help function to remove the device-specific prefix from the key  */
 void removeDevicePrefix(char *uuid,char* key) {
-    //char* prefix = "/000d6f000ef0a7a8/ep/1/r/";
     char prefix[1000];
    // printf("Entering %s\n",__FUNCTION__);
     sprintf(prefix, "/%s/ep/1/r/",uuid);
@@ -282,6 +266,7 @@ void removeDevicePrefix(char *uuid,char* key) {
     }
 }
 
+/* Help function to extract data after last slash */
 void extractAfterLastSlash(const char *str, char *ps ,int size) {
     int lastSlashPos = -1;
     int strLength = strlen(str);
@@ -294,21 +279,18 @@ void extractAfterLastSlash(const char *str, char *ps ,int size) {
 
     if (lastSlashPos != -1 && lastSlashPos < strLength - 1) {
         //printf("Data after the last occurrence of / is  %s\n", &str[lastSlashPos + 1]);
-       // snprintf(ps, size, , str);
         snprintf(ps, size, "%s", &str[lastSlashPos + 1]);
     } else {
         printf("No data found after the last occurrence of /.\n");
     }
 }
 
-// Function to tokenize the buffer based on newlines and equal signs
+/* Help function to tokenize the buffer based on newlines and equal signs */
 void tokenizeBuffer(char *uuid,char buffer[],char keyValue1Array[][512], int maxItems) {
     
     const char* delimiter = "\n";
     char* token;
     char buf1[5000]={'\0'};
-    //int itemIndex = 0;
-    printf("ckp1 \n");
     // Reset keyValue1Array
     for (int i = 0; i < maxItems; i++) {
         memset(keyValue1Array[i], 0, sizeof(keyValue1Array[i]));
@@ -332,29 +314,8 @@ void tokenizeBuffer(char *uuid,char buffer[],char keyValue1Array[][512], int max
             snprintf(keyValue, sizeof(keyValue), "%s = %s", key, value);
             extractAfterLastSlash(keyValue,keyValue1,sizeof(keyValue1));
             printf("%s = %s\n", key, value);
-            //printf("------\n");
             printf("keyval is %s\n", keyValue1);
-	//     getuuidClasss(uuid,buf1,sizeof(buf1));
-          // if(strcmp(buf1,"light") == 0 && lightIndex < maxItems)
-          // {
-	//	   strcpy(keyValue1Array[lightIndex], keyValue1);
-          //         removeDevicePrefix(uuid,key);
-	//	   lightIndex++;
-	  // }else
-	  // {
-	//	   strcpy(keyValue1Array[cameraIndex], keyValue1);
-          //         removeDevicePrefix(uuid,key);
-            //        cameraIndex++;
-	  // }
 	    strcpy(keyValue1Array[itemIndex], keyValue1);
-            // Use rtMessage_AddString to add the key-value pair to the rtMessage
-	    //rtMessage_AddString(res, "properties", "Prop1in=Josekutty");
-	    //rtMessage_SetString(props, "properties", keyValue1);
-            //printf("----------------------\n");
-            //rtMessage_AddMessage(res, "properties", props);
-
-              //  rtMessage_Release(props);
-            //rtMessage_AddString(props, "properties", keyValue1);
 
             // Remove the device-specific prefix from the key, if present
             removeDevicePrefix(uuid,key);
@@ -368,7 +329,7 @@ void tokenizeBuffer(char *uuid,char buffer[],char keyValue1Array[][512], int max
 }
 
 
-
+/* RIot Interface to get device properties */
 void onDeviceProperties1(char *param, char *output, int output_size)
 {
     char cmd[MAX_CMD_SIZE];
@@ -384,6 +345,7 @@ void onDeviceProperties1(char *param, char *output, int output_size)
     return 0;
 }
 
+/* rtmessage callback handler for get device properties */
 void onDeviceProperties(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uint32_t rtMsgLength, void *userData)
 {
     char buf[5000]={'\0'};
@@ -405,84 +367,24 @@ void onDeviceProperties(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, u
         rtMessage_GetString(req, "deviceId", &uuid);
 
         cout << "Device identifier is " << uuid << endl;
-        //rtMessage props;
-        //rtMessage_Create(&props);
 
      	//ckp start
 	onDeviceProperties1(uuid,buf,sizeof(buf));
 	printf("buf is %s\n",buf);
         getuuidClasss(uuid,buf1,sizeof(buf1));
-       printf("before \n");
-       	//if(strcmp(buf1,"light") == 0)
-       // {
+        printf("before \n");
 
                 tokenizeBuffer(uuid,buf,keyValue1Array, MAX_ITEMS);
-		//for (int i = 0; i < lightIndex; i++) {
 		for (int i = 0; i < itemIndex; i++) {
                    printf("keyValue1[%d]: %s\n", i, keyValue1Array[i]);
 		   rtMessage_AddString(res, "properties", keyValue1Array[i]);
-		   //rtMessage_SetString(res, "properties", keyValue1Array[i]);
                }
-	//	memset(keyValue1Array, 0, sizeof(keyValue1Array));
 		printf("before respo \n");
                int ret = rtConnection_SendResponse(con, rtHeader, res, 2000);
                printf("Response dd is %d -- \n",ret);
 	       itemIndex=0;
-       // }
-       // else
-        //{
-          //      tokenizeBuffer(uuid,buf,keyValue1Array, MAX_ITEMS);
-	//	for (int i = 0; i < cameraIndex; i++) {
-          //         printf("keyValue2[%d]: %s\n", i, keyValue1Array[i]);
-         //          rtMessage_AddString(res, "properties", keyValue1Array[i]);
-            //    }
-          //      memset(keyValue1Array, 0, sizeof(keyValue1Array));
-       // rtConnection_SendResponse(con, rtHeader, res, 1000);
-         //       printf("class is camera -- \n");
-       // }
-
 	//ckp end
-#if 0
-        rtMessage_AddString(res, "properties", "Prop1=Josekutty");
-        rtMessage_AddString(res, "properties", "Prop2=Kottarathil");
-        rtMessage_AddString(res, "properties", "Prop3=Comcast");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-        rtMessage_AddString(res, "properties", "Prop4=Engineer");
-
-#endif
-	//rtConnection_SendResponse(con, rtHeader, res, 1000);
         rtMessage_Release(res);
-//	printf("clear data1 \n");
-//	for (int i = 0; i < MAX_ITEMS ; ++i) {
-  //      memset(keyValue1Array[i], 0, MAX_LENGTH); // Reset the contents to 0
-    //    }
     }
     else
     {
@@ -490,6 +392,8 @@ void onDeviceProperties(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, u
     }
     rtMessage_Release(req);
 }
+
+/* RIot interface API to get device property */
 void onDeviceProperty1(char *param,char *proName ,char *output, int output_size)
 {
     char cmd[1000]={'\0'};
@@ -524,7 +428,7 @@ void onDeviceProperty1(char *param,char *proName ,char *output, int output_size)
             snprintf(output, output_size, "%s", buf);
             printf("PD buffer for light is %s\n",output);
             result = strstr(buf,proName);
-if (result != NULL)
+            if (result != NULL)
              {
                 printf("light prop name exists in the buffer is %s\n",proName);
                 printf("format is : /000d6f000ef0a7a8/ep/1/r/isOn \n");
@@ -576,16 +480,10 @@ if (result != NULL)
     } else {
         printf("Device ID: %s does not exist in the list.\n", param);
     }        
-#if 0 
-    sprintf(cmd, "/opt/icontrol/bin/xhDeviceUtil --pd %s",param);
-    ret = _syscmd(cmd, buf, sizeof(buf));
-    if ((ret != 0) && (strlen(buf) == 0))
-        return -1;
-    snprintf(output, output_size, "%s", buf);
-#endif 
     return 0;
 }   
 
+/* rtmessage callback handler for get device property */
 void onDeviceProperty(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uint32_t rtMsgLength, void *userData)
 {
     rtConnection con = (rtConnection)userData;
@@ -608,13 +506,9 @@ void onDeviceProperty(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uin
         cout << "Device identifier is " << uuid << ", Property requested :" << property << endl;
         onDeviceProperty1(uuid,property,buf2,sizeof(buf2));
 	printf("buf2x is %s\n",buf2);
-//	rtMessage_SetString(res, "value1", "AhHooked.");
-//	printf("buf21 is %s\n",buf2);
-   //     rtConnection_SendResponse(con, rtHeader, res, 1000);
 	rtMessage_SetString(res, "value", buf2);
         rtConnection_SendResponse(con, rtHeader, res, 1000);
         rtMessage_Release(res);
-//	printf("buf22 is %s\n",buf2);
     }
     else
     {
@@ -622,38 +516,10 @@ void onDeviceProperty(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uin
     }
     rtMessage_Release(req);
 }
+
+/* RIot interface API and rtmessage callback handler to control the state of light bulb */
 void onSendCommand(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uint32_t rtMsgLength, void *userData)
 {
-#if 0	
-    rtConnection con = (rtConnection)userData;
-    rtMessage req;
-
-    cout << "[onSendCommand]Received  message .." << endl;
-    rtMessage_FromBytes(&req, rtMsg, rtMsgLength);
-
-    if (rtMessageHeader_IsRequest(rtHeader))
-    {
-        rtMessage res;
-        rtMessage_Create(&res);
-
-        char *uuid, *property;
-        rtMessage_GetString(req, "uuid", &uuid);
-        rtMessage_GetString(req, "command", &property);
-
-        cout << "Device identifier is " << uuid << ", command requested :" << property << endl;
-        //free(uuid);
-        //free(property);
-
-        rtMessage_SetInt32(res, "result", 1);
-        rtConnection_SendResponse(con, rtHeader, res, 1000);
-        rtMessage_Release(res);
-    }
-    else
-    {
-        cout << "[onSendCommand]Received  message not a request. Ignoring.." << endl;
-    }
-    rtMessage_Release(req);
-#endif
 
     rtConnection con = (rtConnection)userData;
     rtMessage req;
@@ -675,10 +541,8 @@ void onSendCommand(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uint32
         rtMessage_GetString(req, "deviceId", &uuid);
         rtMessage_GetString(req, "command", &property);
 
-        printf("Entering11 %s\n",__FUNCTION__);
         printf("command requested: %s\n",property);
         printf("Device identifier is %s\n", uuid);
-        printf("Entering12 %s\n",__FUNCTION__);
      	if (strcmp(property, "on=true") == 0) {
 		strcpy(pProperty,"true");
         } 
@@ -698,15 +562,14 @@ void onSendCommand(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uint32
         }
         else
         {
-  sprintf(cmd, "/opt/icontrol/bin/xhDeviceUtil --wr /%s/ep/1/r/isOn %s",uuid,pProperty);
+                sprintf(cmd, "/opt/icontrol/bin/xhDeviceUtil --wr /%s/ep/1/r/isOn %s",uuid,pProperty);
                 printf("command is %s\n",cmd);
                 ret = _syscmd(cmd, buf, sizeof(buf));
                 if ((ret != 0) && (strlen(buf) == 0))
                          return -1;
 
-                // snprintf(output, output_size, "%s", buf);
                 onDeviceProperty1(uuid,"isOn",bufb,sizeof(bufb));
-                    printf("bulb new  state is %s\n",bufb);
+                printf("bulb new  state is %s\n",bufb);
                  if(strcmp(bufb,bufa) == 0)
                  {
                        printf("state did not change \n");
@@ -752,10 +615,11 @@ void waitForTermSignal()
     cout<<"[SmartMonitor::waitForTermSignal] Received term signal."<<endl; });
     termThread.join();
 }
+/* RIOT Interface dameon between RDK-B RIOT and RDK-V settop box*/
 int main(int argc, char const *argv[])
 {
     rtLog_SetLevel(RT_LOG_DEBUG);
-    cout << "RIoT Sample Daemon 1.0" << endl;
+    cout << "RIoT Interface Daemon 1.0" << endl;
     rtConnection con;
     cout<<" Usage is "<<argv[0]<<" tcp://<<ipaddress:port"<<endl;
     rtConnection_Create(&con, "IOTGateway", argc == 1 ? "tcp://127.0.0.1:10001" : argv[1]);
