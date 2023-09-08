@@ -543,7 +543,7 @@ void onSendCommand(rtMessageHeader const *rtHeader, uint8_t const *rtMsg, uint32
 
         printf("command requested: %s\n",property);
         printf("Device identifier is %s\n", uuid);
-     	if (strcmp(property, "on=true") == 0) {
+     	if (strcmp(property, "isOn=true") == 0) {
 		strcpy(pProperty,"true");
         } 
 	else
