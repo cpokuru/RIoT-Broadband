@@ -462,7 +462,7 @@ void onDeviceProperty1(char *param,char *proName ,char *output, int output_size)
                      printf("camera prop name exists : %s\n",proName);
                     if(strcmp(proName,"videoInfo") == 0)
                     {
-                      sprintf(cmd, "/opt/icontrol/bin/xhDeviceUtil --rr /%s/ep/camera/r/%s | grep -o 'https://[^\"]*' | sed -n '1p'",param,proName);
+                      sprintf(cmd, "/opt/icontrol/bin/xhDeviceUtil --rr /%s/ep/camera/r/%s | grep -o 'rtsp://[^\"]*' | sed -n '1p'",param,proName);
                     }
                     else
                      {
